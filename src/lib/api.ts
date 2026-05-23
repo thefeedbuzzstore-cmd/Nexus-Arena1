@@ -23,14 +23,24 @@ api.interceptors.response.use(
 export const gameService = {
   getGames: async (params?: any) => {
     try {
-      console.log('[GameService] Fetching games from Vercel API proxy');
-      const res = await api.get<Game[]>('/games', { 
-        params: { path: 'games', ...params } 
-      });
-      console.log('[GameService] Successfully fetched', res.data?.length || 0, 'games');
-      return res.data || [];
+      console.log('[GameService] Fetching games from FreeToGame API');
+      // Try local API proxy first, fallback to direct fetch
+      try {
+        const res = await api.get<Game[]>('/games/list', { params });
+        return res.data || [];
+      } catch (err) {
+        console.log('[GameService] Local proxy failed, trying direct fetch');
+        // Fallback: fetch directly from FreeToGame (works on localhost, may have CORS issues on deployed site)
+        const response = await fetch('https://www.freetogame.com/api/games', {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        console.log('[GameService] Direct fetch successful, fetched', data?.length || 0, 'games');
+        return Array.isArray(data) ? data : [];
+      }
     } catch (error) {
-      console.error('[GameService] Failed to fetch games:', error);
+      console.error('[GameService] All methods failed:', error);
       return [];
     }
   },
@@ -38,11 +48,19 @@ export const gameService = {
   getGameDetails: async (id: string | number) => {
     try {
       console.log('[GameService] Fetching game details for id:', id);
-      const res = await api.get<Game>('/games', { 
-        params: { path: 'game', id } 
-      });
-      console.log('[GameService] Successfully fetched game details');
-      return res.data;
+      try {
+        const res = await api.get<Game>('/games/details', { params: { id } });
+        return res.data;
+      } catch (err) {
+        console.log('[GameService] Local proxy failed, trying direct fetch');
+        const response = await fetch(`https://www.freetogame.com/api/game?id=${id}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        console.log('[GameService] Direct fetch successful');
+        return data;
+      }
     } catch (error) {
       console.error('[GameService] Failed to fetch game details:', error);
       throw error;
@@ -52,11 +70,20 @@ export const gameService = {
   getDeals: async (params?: any) => {
     try {
       console.log('[GameService] Fetching deals');
-      const res = await api.get<Deal[]>('/games', { 
-        params: { path: 'filter', ...params } 
-      });
-      console.log('[GameService] Successfully fetched', res.data?.length || 0, 'deals');
-      return res.data || [];
+      try {
+        const res = await api.get<Deal[]>('/deals', { params });
+        return res.data || [];
+      } catch (err) {
+        console.log('[GameService] Local proxy failed, trying direct fetch');
+        const queryString = new URLSearchParams(params).toString();
+        const response = await fetch(`https://www.freetogame.com/api/filter?${queryString}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        console.log('[GameService] Direct fetch successful, fetched', data?.length || 0, 'deals');
+        return Array.isArray(data) ? data : [];
+      }
     } catch (error) {
       console.error('[GameService] Failed to fetch deals:', error);
       return [];
