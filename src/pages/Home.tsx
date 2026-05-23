@@ -20,10 +20,12 @@ export default function Home() {
   const [featuredGames, setFeaturedGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [config, setConfig] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const loadGames = async () => {
       try {
+        setError(null);
         let homeConfig = null;
         
         if (isFirebaseReady && db) {
@@ -35,14 +37,21 @@ export default function Home() {
             }
           } catch (configError) {
             console.error("Failed to load homepage config", configError);
-            handleFirestoreError(configError, OperationType.GET, 'homepage_config/main');
+            // Don't throw - config is optional
           }
         }
 
+        console.log("[v0] Fetching games from API...");
         const allGames = await gameService.getGames();
+        console.log("[v0] Games fetched:", allGames.length, "games");
+        
+        if (!allGames || allGames.length === 0) {
+          throw new Error("No games received from API");
+        }
+
         setTrending(allGames.slice(0, 8));
-        setShooters(allGames.filter(g => g.genre.toLowerCase().includes('shooter')).slice(0, 4));
-        setMmos(allGames.filter(g => g.genre.toLowerCase().includes('mmo')).slice(0, 4));
+        setShooters(allGames.filter(g => g.genre && g.genre.toLowerCase().includes('shooter')).slice(0, 4));
+        setMmos(allGames.filter(g => g.genre && g.genre.toLowerCase().includes('mmo')).slice(0, 4));
 
         if (homeConfig?.featured_games?.length > 0) {
           const featured = allGames.filter(g => homeConfig.featured_games.includes(String(g.id)));
@@ -50,6 +59,7 @@ export default function Home() {
         }
       } catch (error) {
         console.error("Failed to load games", error);
+        setError("Unable to load games. The FreeToGame API may be temporarily unavailable. Please refresh the page.");
       } finally {
         setLoading(false);
       }
@@ -127,6 +137,25 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="fixed top-20 left-0 right-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+              <div className="text-red-400 font-bold text-sm leading-relaxed flex-1">
+                {error}
+              </div>
+              <button 
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-300 text-lg font-bold flex-shrink-0"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-32">

@@ -14,14 +14,19 @@ async function startServer() {
   app.use(express.json());
 
   // Gemini Setup
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || "",
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const ai = geminiApiKey ? new GoogleGenAI({
+    apiKey: geminiApiKey,
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
       }
     }
-  });
+  }) : null;
+
+  if (!geminiApiKey) {
+    console.warn("[Server] GEMINI_API_KEY not set. AI features (summarization, recommendations) will be unavailable.");
+  }
 
   // API Routes
   
@@ -130,6 +135,12 @@ Sitemap: ${baseUrl}/sitemap.xml`);
       return res.status(400).json({ error: "Game title and description are required" });
     }
 
+    // If no API key, return the original description
+    if (!ai) {
+      console.warn("[API] Gemini API not available, returning original description");
+      return res.json({ summary: description });
+    }
+
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -140,13 +151,21 @@ Sitemap: ${baseUrl}/sitemap.xml`);
       });
       res.json({ summary: response.text });
     } catch (error) {
-      console.error("Gemini Error:", error);
-      res.status(500).json({ error: "AI processing failed" });
+      console.error("[API] Gemini Error:", error);
+      // Fallback to original description on error
+      res.json({ summary: description || "Game description unavailable" });
     }
   });
 
   app.post("/api/ai/recommend", async (req, res) => {
     const { favoriteGames, allGames } = req.body;
+    
+    // If no API key, return a generic message
+    if (!ai) {
+      console.warn("[API] Gemini API not available, unable to generate recommendations");
+      return res.json({ recommendation: "AI recommendations are currently unavailable. Please try again later." });
+    }
+
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -157,7 +176,9 @@ Sitemap: ${baseUrl}/sitemap.xml`);
       });
       res.json({ recommendation: response.text });
     } catch (error) {
-       res.status(500).json({ error: "AI recommendation failed" });
+      console.error("[API] AI Recommendation Error:", error);
+      // Return fallback message on error
+      res.json({ recommendation: "Unable to generate recommendations at this time. Try again later." });
     }
   });
 
