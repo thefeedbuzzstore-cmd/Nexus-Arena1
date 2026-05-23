@@ -7,10 +7,13 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// FreeToGame API instance (CORS enabled by the API)
+// FreeToGame API proxy via Vercel serverless function
 const gameApi = axios.create({
-  baseURL: 'https://www.freetogame.com/api',
+  baseURL: '/api/games',
   timeout: 15000,
+  headers: {
+    'Accept': 'application/json',
+  }
 });
 
 // Add error interceptor for better debugging
@@ -36,8 +39,8 @@ export const gameService = {
   getGames: async (params?: any) => {
     try {
       console.log('[GameService] Fetching games from FreeToGame API');
-      // Fetch directly from FreeToGame API
-      const res = await gameApi.get<Game[]>('/games', { params });
+      // Fetch via Vercel API proxy
+      const res = await gameApi.get<Game[]>('', { params: { path: 'games', ...params } });
       console.log('[GameService] Successfully fetched', res.data?.length || 0, 'games');
       return res.data || [];
     } catch (error) {
@@ -49,8 +52,8 @@ export const gameService = {
   getGameDetails: async (id: string | number) => {
     try {
       console.log('[GameService] Fetching game details for id:', id);
-      // Fetch directly from FreeToGame API
-      const res = await gameApi.get<Game>(`/game`, { params: { id } });
+      // Fetch via Vercel API proxy
+      const res = await gameApi.get<Game>('', { params: { path: 'game', id } });
       console.log('[GameService] Successfully fetched game details');
       return res.data;
     } catch (error) {
@@ -62,8 +65,8 @@ export const gameService = {
   getDeals: async (params?: any) => {
     try {
       console.log('[GameService] Fetching deals');
-      // Fetch directly from FreeToGame API
-      const res = await gameApi.get<Deal[]>('/filter', { params });
+      // Fetch via Vercel API proxy
+      const res = await gameApi.get<Deal[]>('', { params: { path: 'filter', ...params } });
       console.log('[GameService] Successfully fetched', res.data?.length || 0, 'deals');
       return res.data || [];
     } catch (error) {
