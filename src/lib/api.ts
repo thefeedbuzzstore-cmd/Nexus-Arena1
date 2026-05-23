@@ -1,9 +1,16 @@
 import axios from 'axios';
 import { Game, Deal } from '../types';
 
+// Separate instances for different APIs
 const api = axios.create({
   baseURL: '/api',
   timeout: 10000,
+});
+
+// FreeToGame API instance (CORS enabled by the API)
+const gameApi = axios.create({
+  baseURL: 'https://www.freetogame.com/api',
+  timeout: 15000,
 });
 
 // Add error interceptor for better debugging
@@ -16,13 +23,22 @@ api.interceptors.response.use(
   }
 );
 
+gameApi.interceptors.response.use(
+  response => response,
+  error => {
+    const message = error.response?.data?.error || error.message || 'FreeToGame API request failed';
+    console.error('[FreeToGame Error]', error.config?.url, message);
+    return Promise.reject(error);
+  }
+);
+
 export const gameService = {
   getGames: async (params?: any) => {
     try {
-      // Use Vercel API proxy endpoint
-      const res = await api.get<Game[]>('/games', { 
-        params: { path: 'games', ...params } 
-      });
+      console.log('[GameService] Fetching games from FreeToGame API');
+      // Fetch directly from FreeToGame API
+      const res = await gameApi.get<Game[]>('/games', { params });
+      console.log('[GameService] Successfully fetched', res.data?.length || 0, 'games');
       return res.data || [];
     } catch (error) {
       console.error('[GameService] Failed to fetch games:', error);
@@ -32,10 +48,10 @@ export const gameService = {
   
   getGameDetails: async (id: string | number) => {
     try {
-      // Use Vercel API proxy endpoint  
-      const res = await api.get<Game>('/games', { 
-        params: { path: 'game', id } 
-      });
+      console.log('[GameService] Fetching game details for id:', id);
+      // Fetch directly from FreeToGame API
+      const res = await gameApi.get<Game>(`/game`, { params: { id } });
+      console.log('[GameService] Successfully fetched game details');
       return res.data;
     } catch (error) {
       console.error('[GameService] Failed to fetch game details:', error);
@@ -45,10 +61,10 @@ export const gameService = {
   
   getDeals: async (params?: any) => {
     try {
-      // Use Vercel API proxy endpoint
-      const res = await api.get<Deal[]>('/games', { 
-        params: { path: 'filter', ...params } 
-      });
+      console.log('[GameService] Fetching deals');
+      // Fetch directly from FreeToGame API
+      const res = await gameApi.get<Deal[]>('/filter', { params });
+      console.log('[GameService] Successfully fetched', res.data?.length || 0, 'deals');
       return res.data || [];
     } catch (error) {
       console.error('[GameService] Failed to fetch deals:', error);
