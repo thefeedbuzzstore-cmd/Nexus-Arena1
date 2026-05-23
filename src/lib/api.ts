@@ -29,13 +29,18 @@ export const gameService = {
         const res = await api.get<Game[]>('/games/list', { params });
         return res.data || [];
       } catch (err) {
-        console.log('[GameService] Local proxy failed, trying direct fetch');
-        // Fallback: fetch directly from FreeToGame using CORS proxy
-        const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://www.freetogame.com/api/games');
-        const response = await fetch(corsProxyUrl);
-        const data = await response.json();
-        console.log('[GameService] Direct fetch via CORS proxy successful, fetched', data?.length || 0, 'games');
-        return Array.isArray(data) ? data : [];
+        console.log('[GameService] Local proxy failed, trying CORS proxy');
+        try {
+          // Try corsproxy.io first
+          const corsProxyUrl = 'https://corsproxy.io/?https://www.freetogame.com/api/games';
+          const response = await fetch(corsProxyUrl);
+          const data = await response.json();
+          console.log('[GameService] CORS proxy successful, fetched', data?.length || 0, 'games');
+          return Array.isArray(data) ? data : [];
+        } catch (corsErr) {
+          console.error('[GameService] CORS proxy failed, all methods exhausted');
+          return [];
+        }
       }
     } catch (error) {
       console.error('[GameService] All methods failed:', error);
@@ -50,12 +55,17 @@ export const gameService = {
         const res = await api.get<Game>('/games/details', { params: { id } });
         return res.data;
       } catch (err) {
-        console.log('[GameService] Local proxy failed, trying direct fetch');
-        const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://www.freetogame.com/api/game?id=${id}`);
-        const response = await fetch(corsProxyUrl);
-        const data = await response.json();
-        console.log('[GameService] Direct fetch via CORS proxy successful');
-        return data;
+        console.log('[GameService] Local proxy failed, trying CORS proxy');
+        try {
+          const corsProxyUrl = `https://corsproxy.io/?https://www.freetogame.com/api/game?id=${id}`;
+          const response = await fetch(corsProxyUrl);
+          const data = await response.json();
+          console.log('[GameService] CORS proxy successful');
+          return data;
+        } catch (corsErr) {
+          console.error('[GameService] CORS proxy failed');
+          throw corsErr;
+        }
       }
     } catch (error) {
       console.error('[GameService] Failed to fetch game details:', error);
@@ -70,13 +80,18 @@ export const gameService = {
         const res = await api.get<Deal[]>('/deals', { params });
         return res.data || [];
       } catch (err) {
-        console.log('[GameService] Local proxy failed, trying direct fetch');
-        const queryString = new URLSearchParams(params).toString();
-        const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://www.freetogame.com/api/filter?${queryString}`);
-        const response = await fetch(corsProxyUrl);
-        const data = await response.json();
-        console.log('[GameService] Direct fetch via CORS proxy successful, fetched', data?.length || 0, 'deals');
-        return Array.isArray(data) ? data : [];
+        console.log('[GameService] Local proxy failed, trying CORS proxy');
+        try {
+          const queryString = new URLSearchParams(params).toString();
+          const corsProxyUrl = `https://corsproxy.io/?https://www.freetogame.com/api/filter?${queryString}`;
+          const response = await fetch(corsProxyUrl);
+          const data = await response.json();
+          console.log('[GameService] CORS proxy successful, fetched', data?.length || 0, 'deals');
+          return Array.isArray(data) ? data : [];
+        } catch (corsErr) {
+          console.error('[GameService] CORS proxy failed');
+          return [];
+        }
       }
     } catch (error) {
       console.error('[GameService] Failed to fetch deals:', error);
