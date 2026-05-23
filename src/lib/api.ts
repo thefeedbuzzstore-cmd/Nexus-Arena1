@@ -20,7 +20,9 @@ export const gameService = {
   getGames: async (params?: any) => {
     try {
       // Use Vercel API proxy endpoint
-      const res = await api.get<Game[]>('/games?path=games', { params });
+      const res = await api.get<Game[]>('/games', { 
+        params: { path: 'games', ...params } 
+      });
       return res.data || [];
     } catch (error) {
       console.error('[GameService] Failed to fetch games:', error);
@@ -31,7 +33,9 @@ export const gameService = {
   getGameDetails: async (id: string | number) => {
     try {
       // Use Vercel API proxy endpoint  
-      const res = await api.get<Game>('/games?path=game', { params: { id } });
+      const res = await api.get<Game>('/games', { 
+        params: { path: 'game', id } 
+      });
       return res.data;
     } catch (error) {
       console.error('[GameService] Failed to fetch game details:', error);
@@ -42,7 +46,9 @@ export const gameService = {
   getDeals: async (params?: any) => {
     try {
       // Use Vercel API proxy endpoint
-      const res = await api.get<Deal[]>('/games?path=filter', { params });
+      const res = await api.get<Deal[]>('/games', { 
+        params: { path: 'filter', ...params } 
+      });
       return res.data || [];
     } catch (error) {
       console.error('[GameService] Failed to fetch deals:', error);
