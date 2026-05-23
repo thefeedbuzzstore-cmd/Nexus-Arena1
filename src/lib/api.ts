@@ -19,7 +19,8 @@ api.interceptors.response.use(
 export const gameService = {
   getGames: async (params?: any) => {
     try {
-      const res = await api.get<Game[]>('/games/list', { params });
+      // Use Vercel API proxy endpoint
+      const res = await api.get<Game[]>('/games?path=games', { params });
       return res.data || [];
     } catch (error) {
       console.error('[GameService] Failed to fetch games:', error);
@@ -29,7 +30,8 @@ export const gameService = {
   
   getGameDetails: async (id: string | number) => {
     try {
-      const res = await api.get<Game>('/games/details', { params: { id } });
+      // Use Vercel API proxy endpoint  
+      const res = await api.get<Game>('/games?path=game', { params: { id } });
       return res.data;
     } catch (error) {
       console.error('[GameService] Failed to fetch game details:', error);
@@ -39,7 +41,8 @@ export const gameService = {
   
   getDeals: async (params?: any) => {
     try {
-      const res = await api.get<Deal[]>('/deals', { params });
+      // Use Vercel API proxy endpoint
+      const res = await api.get<Deal[]>('/games?path=filter', { params });
       return res.data || [];
     } catch (error) {
       console.error('[GameService] Failed to fetch deals:', error);
