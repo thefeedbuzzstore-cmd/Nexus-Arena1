@@ -30,13 +30,11 @@ export const gameService = {
         return res.data || [];
       } catch (err) {
         console.log('[GameService] Local proxy failed, trying direct fetch');
-        // Fallback: fetch directly from FreeToGame (works on localhost, may have CORS issues on deployed site)
-        const response = await fetch('https://www.freetogame.com/api/games', {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
+        // Fallback: fetch directly from FreeToGame using CORS proxy
+        const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://www.freetogame.com/api/games');
+        const response = await fetch(corsProxyUrl);
         const data = await response.json();
-        console.log('[GameService] Direct fetch successful, fetched', data?.length || 0, 'games');
+        console.log('[GameService] Direct fetch via CORS proxy successful, fetched', data?.length || 0, 'games');
         return Array.isArray(data) ? data : [];
       }
     } catch (error) {
@@ -53,12 +51,10 @@ export const gameService = {
         return res.data;
       } catch (err) {
         console.log('[GameService] Local proxy failed, trying direct fetch');
-        const response = await fetch(`https://www.freetogame.com/api/game?id=${id}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
+        const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://www.freetogame.com/api/game?id=${id}`);
+        const response = await fetch(corsProxyUrl);
         const data = await response.json();
-        console.log('[GameService] Direct fetch successful');
+        console.log('[GameService] Direct fetch via CORS proxy successful');
         return data;
       }
     } catch (error) {
@@ -76,12 +72,10 @@ export const gameService = {
       } catch (err) {
         console.log('[GameService] Local proxy failed, trying direct fetch');
         const queryString = new URLSearchParams(params).toString();
-        const response = await fetch(`https://www.freetogame.com/api/filter?${queryString}`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
+        const corsProxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(`https://www.freetogame.com/api/filter?${queryString}`);
+        const response = await fetch(corsProxyUrl);
         const data = await response.json();
-        console.log('[GameService] Direct fetch successful, fetched', data?.length || 0, 'deals');
+        console.log('[GameService] Direct fetch via CORS proxy successful, fetched', data?.length || 0, 'deals');
         return Array.isArray(data) ? data : [];
       }
     } catch (error) {
