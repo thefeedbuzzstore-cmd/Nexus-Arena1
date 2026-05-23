@@ -1,15 +1,9 @@
 import axios from 'axios';
 import { Game, Deal } from '../types';
 
-// Separate instances for different APIs
+// Main API instance (includes Vercel serverless functions and local Express)
 const api = axios.create({
   baseURL: '/api',
-  timeout: 10000,
-});
-
-// FreeToGame API - Direct fetch with CORS support
-const gameApi = axios.create({
-  baseURL: 'https://www.freetogame.com/api',
   timeout: 15000,
   headers: {
     'Accept': 'application/json',
@@ -26,20 +20,13 @@ api.interceptors.response.use(
   }
 );
 
-gameApi.interceptors.response.use(
-  response => response,
-  error => {
-    const message = error.response?.data?.error || error.message || 'FreeToGame API request failed';
-    console.error('[FreeToGame Error]', error.config?.url, message);
-    return Promise.reject(error);
-  }
-);
-
 export const gameService = {
   getGames: async (params?: any) => {
     try {
-      console.log('[GameService] Fetching games from FreeToGame API');
-      const res = await gameApi.get<Game[]>('/games', { params });
+      console.log('[GameService] Fetching games from Vercel API proxy');
+      const res = await api.get<Game[]>('/games', { 
+        params: { path: 'games', ...params } 
+      });
       console.log('[GameService] Successfully fetched', res.data?.length || 0, 'games');
       return res.data || [];
     } catch (error) {
@@ -51,7 +38,9 @@ export const gameService = {
   getGameDetails: async (id: string | number) => {
     try {
       console.log('[GameService] Fetching game details for id:', id);
-      const res = await gameApi.get<Game>('/game', { params: { id } });
+      const res = await api.get<Game>('/games', { 
+        params: { path: 'game', id } 
+      });
       console.log('[GameService] Successfully fetched game details');
       return res.data;
     } catch (error) {
@@ -63,7 +52,9 @@ export const gameService = {
   getDeals: async (params?: any) => {
     try {
       console.log('[GameService] Fetching deals');
-      const res = await gameApi.get<Deal[]>('/filter', { params });
+      const res = await api.get<Deal[]>('/games', { 
+        params: { path: 'filter', ...params } 
+      });
       console.log('[GameService] Successfully fetched', res.data?.length || 0, 'deals');
       return res.data || [];
     } catch (error) {
